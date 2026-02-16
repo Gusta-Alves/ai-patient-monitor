@@ -1,18 +1,25 @@
 from ultralytics import YOLO
 import cv2
-import math
 from collections import deque
+import time
+from aws_client.aws_integration import SQSClient
 
+QUEUE_URL = "FILA-TEST"
 model = YOLO('yolov8n-pose.pt')
 cap = cv2.VideoCapture("video.mp4")
+client = SQSClient(QUEUE_URL, useLocalStack="true")
 
+# Cooldown entre alertas (segundos)
+COOLDOWN_SECONDS = 60
+last_alert_time = 0
 # ============================================================
 # MAQUINA DE ESTADOS - evita ficar alternando entre estados
 # ============================================================
 ESTADO_NORMAL = "NORMAL"
 ESTADO_SUSPEITA = "SUSPEITA"
 ESTADO_CAIU = "CAIU"
-
+COOLDOWN_SECONDS = 60  # ajuste conforme necessário
+last_alert_time = 0
 estado_atual = ESTADO_NORMAL
 
 HISTORICO_TAMANHO = 10
@@ -27,6 +34,21 @@ FRAMES_PARA_RECUPERAR = 60
 # Variáveis auxiliares
 prev_y_nariz = 0
 frame_height = None
+
+
+def alert_with_colldown(client, COOLDOWN_SECONDS, last_alert_time):
+    now = time.time()
+    if now - last_alert_time >= COOLDOWN_SECONDS:
+        client.send_alert(
+            alert_type="FALL_DETECTION",
+            message="Uma queda foi detectada no quarto 101",
+            metadata={"priority": "high", "patient_id": "12345"}
+        )
+        last_alert_time = now
+    else:
+        remaining = int(COOLDOWN_SECONDS - (now - last_alert_time))
+        print(f"Alerta suprimido por cooldown ({remaining}s restantes)")
+
 
 while cap.isOpened():
     ret, frame = cap.read()
@@ -150,7 +172,7 @@ while cap.isOpened():
                         cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 3)
             cv2.putText(frame, "PACIENTE PRECISA DE AJUDA", (50, 100),
                         cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 0, 255), 2)
-
+            alert_with_colldown(client, COOLDOWN_SECONDS, last_alert_time)
             cv2.rectangle(frame, (5, 5), (frame.shape[1] - 5, frame.shape[0] - 5),
                           (0, 0, 255), 4)
 
