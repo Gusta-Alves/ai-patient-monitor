@@ -1,7 +1,7 @@
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 import uvicorn
-from cloud_orchestrator import process_patient_video
+from orchestrator.cloud_orchestrator import process_patient_video
 
 app = FastAPI(
     title="AI Patient Monitor API",

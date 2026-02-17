@@ -2,8 +2,6 @@ import os
 import boto3
 from pathlib import Path
 from aws_client.aws_integration import SQSClient
-import time
-# Importações dos nossos módulos refatorados
 from processors.fall_detection import analyze_video_file
 from processors.analyze_multimodal_ai import analyze_multimodal_ai
 from processors.transcribe_video import extract_audio_from_video
@@ -154,9 +152,3 @@ def process_patient_video(video_key, use_s3=False, use_localstack=False, headles
     except Exception as e:
         print(f"❌ Erro no processamento: {e}")
         raise e
-
-
-if __name__ == "__main__":
-    # Simula a chegada de um arquivo no S3
-    process_patient_video("Video_Gerado_Pronto_Para_Teste.mp4", use_s3=True, use_localstack=True, headless=False)
-    time.sleep(2)  # Pequena pausa para garantir que o processo termine antes de limpar
