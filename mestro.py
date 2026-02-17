@@ -1,6 +1,6 @@
 from config.pipeline_config import PipelineConfig
 from processors.text_processor import transcribe_audio
-from analyze_multimodal_ai import analyze_multimodal_ai
+from processors.analyze_multimodal_ai import analyze_multimodal_ai
 # ==============================================================================
 # CAMADA 4: ORQUESTRADOR PRINCIPAL (MAESTRO)
 # ==============================================================================

@@ -4,17 +4,17 @@ from pathlib import Path
 from aws_client.aws_integration import SQSClient
 import time
 # Importações dos nossos módulos refatorados
-from fall_detection import analyze_video_file
-from analyze_multimodal_ai import analyze_multimodal_ai
-from transcribe_video import extract_audio_from_video, transcribe_audio_to_text
-
+from processors.fall_detection import analyze_video_file
+from processors.analyze_multimodal_ai import analyze_multimodal_ai
+from processors.transcribe_video import extract_audio_from_video
+from processors.transcribe_video import transcribe_audio_to_text
 # Configurações
 QUEUE_URL = "FILA-MONITORAMENTO-IDOSOS"
 BUCKET_NAME = "bucket-videos-monitoramento"
 TEMP_DIR = Path("./temp_processing")
 
 
-def download_video(video_filename, use_s3=False):
+def download_video(video_filename, use_s3=False, use_localstack=False):
     """
     Gerencia o download do vídeo.
     Se use_s3=True, tenta baixar do bucket.
@@ -26,7 +26,12 @@ def download_video(video_filename, use_s3=False):
         try:
             print(
                 f"📥 [S3] Tentando baixar {video_filename} do bucket {BUCKET_NAME}...")
-            s3 = boto3.client('s3', region_name='us-east-1',endpoint_url="http://localhost:4566")
+            
+            if use_localstack:
+                s3 = boto3.client('s3', region_name='us-east-1', endpoint_url="http://localhost:4566")
+            else:
+                s3 = boto3.client('s3', region_name='us-east-1')
+
             s3.download_file(BUCKET_NAME, video_filename, str(target_path))
             print("✅ Download do S3 concluído com sucesso.")
             return target_path
@@ -47,16 +52,17 @@ def download_video(video_filename, use_s3=False):
         f"Arquivo {video_filename} não encontrado localmente nem no S3.")
 
 
-def process_patient_video(video_key, use_s3=False):
+def process_patient_video(video_key, use_s3=False, use_localstack=False):
     """
     Função principal que seria acionada por um Lambda ou Loop de Polling
     """
-    sqs = SQSClient(QUEUE_URL, useLocalStack="true")
+    localstack_str = "true" if use_localstack else "false"
+    sqs = SQSClient(QUEUE_URL, useLocalStack=localstack_str)
 
     try:
         # 1. Setup do ambiente
         TEMP_DIR.mkdir(exist_ok=True)
-        video_path = download_video(video_key, use_s3=use_s3)
+        video_path = download_video(video_key, use_s3=use_s3, use_localstack=use_localstack)
         audio_path = TEMP_DIR / "extracted_audio.wav"
 
         print(f"⚙️ Iniciando análise multimodal para: {video_key}")
@@ -141,5 +147,5 @@ def process_patient_video(video_key, use_s3=False):
 
 if __name__ == "__main__":
     # Simula a chegada de um arquivo no S3
-    process_patient_video("Video_Deitado_Gritando_Socorro.mp4", use_s3=True)
+    process_patient_video("Video_Gerado_Pronto_Para_Teste.mp4", use_s3=True, use_localstack=True)
     time.sleep(2)  # Pequena pausa para garantir que o processo termine antes de limpar
