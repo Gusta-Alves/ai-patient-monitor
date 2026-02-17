@@ -79,3 +79,7 @@ htmlcov/
 
 # Logs
 *.log
+docker/localstack/cache/
+docker/localstack/lib/
+docker/localstack/tmp/
+.env/
