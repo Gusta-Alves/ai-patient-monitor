@@ -1,6 +1,7 @@
 import boto3
 import json
 import os
+import datetime
 
 
 class SQSClient:
@@ -21,7 +22,7 @@ class SQSClient:
             os.environ.setdefault("AWS_ACCESS_KEY_ID", "test")
             os.environ.setdefault("AWS_SECRET_ACCESS_KEY", "test")
             os.environ.setdefault("AWS_DEFAULT_REGION", "us-east-1")
-            self.sqs = boto3.client('sqs', endpoint_url="http://localstack:4566")
+            self.sqs = boto3.client('sqs', endpoint_url="http://localhost:4566")
         else:
             self.sqs = boto3.client('sqs', region_name=self.region_name)
         return self.sqs
@@ -33,7 +34,7 @@ class SQSClient:
         payload = {
             "alert_type": alert_type,
             "message": message,
-            "timestamp": boto3.utils.datetime.now().isoformat(),
+            "timestamp": datetime.datetime.utcnow().isoformat() + "Z",
             "metadata": metadata or {}
         }
 
@@ -54,15 +55,3 @@ class SQSClient:
         except Exception as e:
             print(f"Erro ao enviar mensagem para o SQS: {e}")
             return None
-
-
-if __name__ == "__main__":
-    # Exemplo de uso
-    QUEUE_URL = "SUA_URL_DA_FILA_SQS_AQUI"
-    client = SQSClient(QUEUE_URL)
-
-    client.send_alert(
-        alert_type="FALL_DETECTION",
-        message="Uma queda foi detectada no quarto 101",
-        metadata={"priority": "high", "patient_id": "12345"}
-    )

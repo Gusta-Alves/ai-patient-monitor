@@ -13,3 +13,4 @@ services:
       - ./localstack:/var/lib/localstack
       - /var/run/docker.sock:/var/run/docker.sock
       - ./localstack-init:/etc/localstack/init/ready.d
+      - ./Video_Deitado_Gritando_Socorro.mp4:/tmp/Video_Deitado_Gritando_Socorro.mp4

@@ -18,15 +18,19 @@ def transcribe_audio_to_text(audio_path, text_output_path):
             
             with open(text_output_path, 'w', encoding='utf-8') as file:
                 file.write(text)
+            
+            return text
                 
         except sr.UnknownValueError:
             print("Google Speech Recognition não conseguiu entender o áudio")
+            return ""
         except sr.RequestError as e:
             print("Erro ao solicitar resultados do serviço de reconhecimento de fala do Google; {0}".format(e))
+            return ""
 
 def main():
     script_dir = os.path.dirname(os.path.abspath(__file__))
-    video_path = os.path.join(script_dir, 'video1.mp4')
+    video_path = os.path.join(script_dir, 'Video_Gerado_Pronto_Para_Teste.mp4')
     audio_path = os.path.join(script_dir, 'audio.wav')
     text_output_path = os.path.join(script_dir, 'transcricao1.txt')
 

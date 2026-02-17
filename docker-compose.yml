@@ -1,0 +1,24 @@
+version: "3.8"
+
+services:
+  localstack:
+    container_name: localstack_main
+    image: localstack/localstack
+    ports:
+      - "4566:4566"
+    environment:
+      - SERVICES=s3,sqs
+      - DEBUG=1
+      - DOCKER_HOST=unix:///var/run/docker.sock
+      - AWS_DEFAULT_REGION=us-east-1
+      - AWS_ACCESS_KEY_ID=test
+      - AWS_SECRET_ACCESS_KEY=test
+    volumes:
+      # Mapeia a pasta onde está o script .sh
+      - ./docker/localstack-init:/etc/localstack/init/ready.d
+      
+      # Mapeia o vídeo do seu PC (raiz) para a pasta temporária do container
+      # O arquivo Video_Deitado_Gritando_Socorro.mp4 DEVE existir na mesma pasta deste arquivo
+      - ./Video_Deitado_Gritando_Socorro.mp4:/tmp/Video_Deitado_Gritando_Socorro.mp4
+      
+      - "/var/run/docker.sock:/var/run/docker.sock"

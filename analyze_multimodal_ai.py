@@ -14,7 +14,7 @@ def analyze_multimodal_ai(text: str, audio_path: Path):
     # 1. Carregamento e Normalização
     audio_data, _ = librosa.load(str(audio_path), sr=16000)
     if audio_data.size == 0:
-        return
+        return None
 
     # 2. Extração de Características Físicas (DSP - Digital Signal Processing)
     # Calculamos a energia por quadros (frames) para ver a evolução temporal
@@ -40,6 +40,16 @@ def analyze_multimodal_ai(text: str, audio_path: Path):
     risk_emotions = ["fear", "sadness", "sad", "anger", "disgust"]
     has_emotional_risk = t_pred['label'] in risk_emotions or a_pred['label'] in risk_emotions
 
+    # Prepara o objeto de retorno
+    result = {
+        "is_impact": bool(is_impact),
+        "is_sustained_emergency": bool(is_sustained_emergency),
+        "has_emotional_risk": bool(has_emotional_risk),
+        "text_emotion": t_pred['label'],
+        "audio_emotion": a_pred['label'],
+        "transcription": text
+    }
+
     # 5. Conclusão Baseada em Evidências Multimodais
     print(f"\n📊 LAUDO TÉCNICO MULTIMODAL")
     if is_impact:
@@ -53,3 +63,5 @@ def analyze_multimodal_ai(text: str, audio_path: Path):
 
     if is_impact or is_sustained_emergency or has_emotional_risk:
         print("\n✅ AÇÃO: Protocolo de emergência acionado via Requisito 63.")
+
+    return result
