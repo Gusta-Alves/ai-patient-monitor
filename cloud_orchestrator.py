@@ -52,7 +52,7 @@ def download_video(video_filename, use_s3=False, use_localstack=False):
         f"Arquivo {video_filename} não encontrado localmente nem no S3.")
 
 
-def process_patient_video(video_key, use_s3=False, use_localstack=False):
+def process_patient_video(video_key, use_s3=False, use_localstack=False, headless=True):
     """
     Função principal que seria acionada por um Lambda ou Loop de Polling
     """
@@ -70,7 +70,7 @@ def process_patient_video(video_key, use_s3=False, use_localstack=False):
         # 2. Análise Visual (Detecção de Queda - YOLO)
         # Headless = True para não abrir janelas no servidor
         fall_detected = analyze_video_file(
-            str(video_path), headless=False)  # Alterado para exibir a tela
+            str(video_path), headless=headless)
         print(
             f"📹 [VIDEO] Resultado da Análise Visual: {'🚨 QUEDA DETECTADA' if fall_detected else '✅ Movimento Normal'}")
 
@@ -138,14 +138,25 @@ def process_patient_video(video_key, use_s3=False, use_localstack=False):
                 f"📤 Enviando alerta [{priority.upper()}]: {alert_payload['message']}")
             sqs.send_alert(
                 alert_payload['alert_type'], alert_payload['message'], alert_payload['metadata'])
+            
+            return {
+                "status": "alert_sent",
+                "priority": priority,
+                "data": alert_payload
+            }
         else:
             print("✅ Situação Normal. Nenhum alerta enviado.")
+            return {
+                "status": "normal",
+                "message": "Nenhum risco detectado."
+            }
 
     except Exception as e:
         print(f"❌ Erro no processamento: {e}")
+        raise e
 
 
 if __name__ == "__main__":
     # Simula a chegada de um arquivo no S3
-    process_patient_video("Video_Gerado_Pronto_Para_Teste.mp4", use_s3=True, use_localstack=True)
+    process_patient_video("Video_Gerado_Pronto_Para_Teste.mp4", use_s3=True, use_localstack=True, headless=False)
     time.sleep(2)  # Pequena pausa para garantir que o processo termine antes de limpar

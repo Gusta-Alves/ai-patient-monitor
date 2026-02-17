@@ -1,6 +1,5 @@
 from moviepy import VideoFileClip
 import speech_recognition as sr
-import os
 
 
 def extract_audio_from_video(video_path, audio_path):
