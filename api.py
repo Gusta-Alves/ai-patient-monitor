@@ -5,7 +5,7 @@ import hmac
 import hashlib
 import base64
 import requests
-from jose import jwt
+from jose import jwt, ExpiredSignatureError, JWTError
 from fastapi import FastAPI, HTTPException, Depends, Security
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from pydantic import BaseModel
@@ -85,6 +85,10 @@ def verify_cognito_token(credentials: HTTPAuthorizationCredentials = Security(se
                 raise HTTPException(status_code=401, detail="Token não pertence a este App Client.")
 
         return payload
+    except ExpiredSignatureError:
+        raise HTTPException(status_code=401, detail="Token expirado. Por favor, faça login novamente.")
+    except JWTError as e:
+        raise HTTPException(status_code=401, detail=f"Erro na validação do JWT: {str(e)}")
     except Exception as e:
         raise HTTPException(
             status_code=401, detail=f"Token inválido: {str(e)}")
