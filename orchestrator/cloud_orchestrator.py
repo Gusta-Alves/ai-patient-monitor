@@ -1,4 +1,5 @@
 import os
+import json
 import boto3
 from pathlib import Path
 from aws_client.aws_integration import SQSClient
@@ -7,7 +8,7 @@ from processors.analyze_multimodal_ai import analyze_multimodal_ai
 from processors.transcribe_video import extract_audio_from_video
 from processors.transcribe_video import transcribe_audio_to_text
 # Configurações
-QUEUE_URL = "FILA-MONITORAMENTO-IDOSOS"
+QUEUE_URL = os.getenv("QUEUE_URL", "FILA-MONITORAMENTO-IDOSOS")
 BUCKET_NAME = "bucket-videos-monitoramento"
 TEMP_DIR = Path("./temp_processing")
 
@@ -26,6 +27,7 @@ def download_video(video_filename, use_s3=False, use_localstack=False):
                 f"📥 [S3] Tentando baixar {video_filename} do bucket {BUCKET_NAME}...")
             
             if use_localstack:
+                print(f"📥 Using Local stack...")
                 s3 = boto3.client('s3', region_name='us-east-1', endpoint_url="http://localhost:4566")
             else:
                 s3 = boto3.client('s3', region_name='us-east-1')
@@ -54,8 +56,6 @@ def process_patient_video(video_key, use_s3=False, use_localstack=False, headles
     """
     Função principal que seria acionada por um Lambda ou Loop de Polling
     """
-    localstack_str = "true" if use_localstack else "false"
-    sqs = SQSClient(QUEUE_URL, useLocalStack=localstack_str)
 
     try:
         # 1. Setup do ambiente
@@ -134,8 +134,15 @@ def process_patient_video(video_key, use_s3=False, use_localstack=False, headles
         if alert_payload:
             print(
                 f"📤 Enviando alerta [{priority.upper()}]: {alert_payload['message']}")
+            
+            # Usa a classe SQSClient corrigida e simplificada
+            # Ela já resolve a URL e cria a fila no LocalStack se necessário
+            sqs = SQSClient(QUEUE_URL, useLocalStack=use_localstack)
             sqs.send_alert(
-                alert_payload['alert_type'], alert_payload['message'], alert_payload['metadata'])
+                alert_payload['alert_type'], 
+                alert_payload['message'], 
+                alert_payload['metadata']
+            )
             
             return {
                 "status": "alert_sent",

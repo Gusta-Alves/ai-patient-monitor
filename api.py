@@ -16,6 +16,12 @@ class VideoAnalysisRequest(BaseModel):
     use_localstack: bool = False
 
 
+@app.get("/health", status_code=200)
+async def health_check():
+    """Endpoint de verificação de saúde para Load Balancers (AWS)."""
+    return {"status": "healthy"}
+
+
 @app.post("/analyze-video", status_code=200)
 async def analyze_video_endpoint(request: VideoAnalysisRequest):
     """
@@ -30,7 +36,7 @@ async def analyze_video_endpoint(request: VideoAnalysisRequest):
             video_key=request.video_key,
             use_s3=request.use_s3,
             use_localstack=request.use_localstack,
-            headless=True
+            headless=False
         )
         return result
     except FileNotFoundError as e:
