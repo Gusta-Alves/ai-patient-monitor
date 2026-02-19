@@ -23,7 +23,10 @@ wheels/
 *.egg-info/
 .installed.cfg
 *.egg
-
+# Terraform
+.terraform/
+*.tfstate
+*.tfstate.backup
 # Virtual environments
 *.virtualenv
 pip-log.txt
