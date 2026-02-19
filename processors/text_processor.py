@@ -12,7 +12,7 @@ load_dotenv(project_root / ".env")
 
 @lru_cache(maxsize=1)
 def get_diarization_pipeline():
-    """Carrega o modelo após o aceite manual no site do Hugging Face"""
+
     pipeline = Pipeline.from_pretrained(
         "pyannote/speaker-diarization-3.1",
         token= os.getenv("HF_TOKEN"),
@@ -23,7 +23,7 @@ def get_diarization_pipeline():
 
 
 def transcribe_audio(audio_path: Path, model_name: str) -> str:
-    """Transcreve e separa falas por locutor (Diarização)"""
+
     model = get_whisper_model(model_name)
     diarization_pipeline = get_diarization_pipeline()
 
@@ -45,15 +45,14 @@ def transcribe_audio(audio_path: Path, model_name: str) -> str:
 
         speaker = "Unknown"
 
-        # AJUSTE: O itertracks() pertence ao objeto retornado pela pipeline
-        # Na versão 3.1, se 'diarization' vier como DiarizeOutput, acessamos itertracks() assim:
+
         try:
             for turn, _, speaker_label in diarization.itertracks(yield_label=True):
                 if turn.start <= start <= turn.end:
                     speaker = speaker_label
                     break
         except AttributeError:
-            # Fallback caso a estrutura mude em atualizações menores
+
             speaker = "Speaker_Detected"
 
         final_transcript.append(f"[{speaker}]: {text}")

@@ -14,11 +14,7 @@ TEMP_DIR = Path("./temp_processing")
 
 
 def download_video(video_filename, use_s3=False, use_localstack=False):
-    """
-    Gerencia o download do vídeo.
-    Se use_s3=True, tenta baixar do bucket.
-    Se falhar ou use_s3=False, usa o arquivo local (Mock).
-    """
+
     target_path = TEMP_DIR / video_filename
 
     if use_s3:
@@ -39,7 +35,7 @@ def download_video(video_filename, use_s3=False, use_localstack=False):
             print(f"⚠️ [S3] Falha no download ou cliente não configurado: {e}")
             print("🔄 Revertendo para arquivo LOCAL...")
 
-    # Lógica de Fallback para arquivo local
+
     print(f"📥 [LOCAL] Buscando arquivo: {video_filename}...")
     local_path = Path(os.path.abspath(video_filename))
 
@@ -53,33 +49,23 @@ def download_video(video_filename, use_s3=False, use_localstack=False):
 
 
 def process_patient_video(video_key, use_s3=False, use_localstack=False, headless=True):
-    """
-    Função principal que seria acionada por um Lambda ou Loop de Polling
-    """
-
     try:
-        # 1. Setup do ambiente
+
         TEMP_DIR.mkdir(exist_ok=True)
         video_path = download_video(video_key, use_s3=use_s3, use_localstack=use_localstack)
         audio_path = TEMP_DIR / "extracted_audio.wav"
 
         print(f"⚙️ Iniciando análise multimodal para: {video_key}")
 
-        # 2. Análise Visual (Detecção de Queda - YOLO)
-        # Headless = True para não abrir janelas no servidor
         fall_detected = analyze_video_file(
             str(video_path), headless=headless)
         print(
             f"📹 [VIDEO] Resultado da Análise Visual: {'🚨 QUEDA DETECTADA' if fall_detected else '✅ Movimento Normal'}")
 
-        # 3. Extração e Transcrição de Áudio
+
         extract_audio_from_video(str(video_path), str(audio_path))
 
-        # Usando speech_recognition simples (pode ser substituído pelo Whisper do mestro.py)
-        # Para simplificar, vamos assumir que temos o texto ou usar o mock
-        # Aqui estou chamando a função existente, mas ela imprime.
-        # Idealmente, transcribe_audio_to_text deveria retornar a string.
-        # Vamos assumir um texto mockado para teste se a transcrição falhar ou demorar
+
         text_content = transcribe_audio_to_text(
             str(audio_path), str(TEMP_DIR / "transcription.txt"))
 
@@ -90,14 +76,10 @@ def process_patient_video(video_key, use_s3=False, use_localstack=False, headles
             print("❌ Falha na análise de áudio.")
             return
 
-        # ======================================================================
-        # LÓGICA DE DECISÃO UNIFICADA (FUSÃO DE SENSORES)
-        # ======================================================================
 
         alert_payload = {}
         priority = "low"
 
-        # CASO 1: EMERGÊNCIA CRÍTICA (Queda Visual OU Grito/Impacto Sonoro)
         if fall_detected or ai_analysis['is_impact'] or ai_analysis['is_sustained_emergency']:
             priority = "critical"
             reason = []
@@ -118,7 +100,7 @@ def process_patient_video(video_key, use_s3=False, use_localstack=False, headles
                 }
             }
 
-        # CASO 2: ATENÇÃO PSICOLÓGICA (Tristeza/Medo sem queda)
+
         elif ai_analysis['has_emotional_risk']:
             priority = "medium"
             alert_payload = {
@@ -130,13 +112,11 @@ def process_patient_video(video_key, use_s3=False, use_localstack=False, headles
                 }
             }
 
-        # Envio para SQS
+
         if alert_payload:
             print(
                 f"📤 Enviando alerta [{priority.upper()}]: {alert_payload['message']}")
-            
-            # Usa a classe SQSClient corrigida e simplificada
-            # Ela já resolve a URL e cria a fila no LocalStack se necessário
+
             sqs = SQSClient(QUEUE_URL, useLocalStack=use_localstack)
             sqs.send_alert(
                 alert_payload['alert_type'], 

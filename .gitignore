@@ -23,7 +23,11 @@ wheels/
 *.egg-info/
 .installed.cfg
 *.egg
-
+# Terraform
+terraform/.terraform/
+*.tfstate
+*.tfstate.backup
+terraform/.terraform/providers/registry.terraform.io/hashicorp/aws/6.32.1/windows_amd64/terraform-provider-aws_v6.32.1_x5.exe
 # Virtual environments
 *.virtualenv
 pip-log.txt
