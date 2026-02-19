@@ -24,7 +24,7 @@ wheels/
 .installed.cfg
 *.egg
 # Terraform
-.terraform/
+terraform/.terraform/
 *.tfstate
 *.tfstate.backup
 # Virtual environments
