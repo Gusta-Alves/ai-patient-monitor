@@ -7,8 +7,7 @@ from processors.analyze_multimodal_ai import analyze_multimodal_ai
 config = PipelineConfig()
 
 audio_file = config.base_dir / 'Video_Deitado_Gritando_Socorro.mp4'
-# audio_file = config.base_dir / 'Video_Gerado_Pronto_Para_Teste.mp4'
-# audio_file = Path('paciente_01.mp4')
+
 
 if not audio_file.exists():
     print(f"❌ Arquivo não encontrado: {audio_file}")

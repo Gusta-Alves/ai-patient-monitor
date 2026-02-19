@@ -168,7 +168,7 @@ async def analyze_video_endpoint(
             video_key=request.video_key,
             use_s3=request.use_s3,
             use_localstack=request.use_localstack,
-            headless=True
+            headless=False
         )
         return result
     except FileNotFoundError as e:

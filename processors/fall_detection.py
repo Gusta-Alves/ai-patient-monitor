@@ -6,19 +6,17 @@ from aws_client.aws_integration import SQSClient
 
 QUEUE_URL = "FILA-TEST"
 
-# Recursos pesados (modelo, captura e client) são inicializados em runtime
+
 model = None
 cap = None
 client = None
 
-# ============================================================
-# MAQUINA DE ESTADOS - evita ficar alternando entre estados
-# ============================================================
+
 ESTADO_NORMAL = "NORMAL"
 ESTADO_SUSPEITA = "SUSPEITA"
 ESTADO_CAIU = "CAIU"
 
-COOLDOWN_SECONDS = 60  # ajuste conforme necessário
+COOLDOWN_SECONDS = 60  
 last_alert_time = 0
 estado_atual = ESTADO_NORMAL
 
@@ -57,7 +55,6 @@ def alert_with_cooldown(client, message="Queda detectada"):
 def analyze_video_file(video_path, headless=True):
     global model, cap, client, frame_height, prev_y_nariz, estado_atual, frames_suspeita, frames_recuperacao
 
-    # Inicializa modelo, captura e client aqui (evita executar quando importado)
     print("Inicializando modelo e captura de vídeo...")
     try:
         model = YOLO('yolov8n-pose.pt')
@@ -66,8 +63,7 @@ def analyze_video_file(video_path, headless=True):
         return False
 
     cap = cv2.VideoCapture(video_path)
-    # Client removido daqui, quem envia o alerta é o orquestrador agora
-    # client = SQSClient(QUEUE_URL, useLocalStack="true")
+
 
     fall_detected_in_video = False
 
@@ -84,13 +80,10 @@ def analyze_video_file(video_path, headless=True):
         if frame_height is None:
             frame_height = frame.shape[0]
 
-        # conf=0.6 -> só aceita detecções com 60%+ de confiança
-        # iou=0.4  -> suprime caixas muito sobrepostas (elimina duplicatas)
+
         results = model(frame, conf=0.6, iou=0.4, verbose=False)
 
-        # ==========================================================
-        # 1. REGRA: Se tem mais de 1 pessoa, está seguro
-        # ==========================================================
+
         pessoas_detectadas = [
             box for box in results[0].boxes
             if box.cls == 0 and box.conf >= 0.6
@@ -105,9 +98,7 @@ def analyze_video_file(video_path, headless=True):
                         cv2.FONT_HERSHEY_SIMPLEX, 1, cor, 2)
 
         elif len(pessoas_detectadas) == 1:
-            # ==========================================================
-            # 2. ANÁLISE DE QUEDA
-            # ==========================================================
+
             tem_keypoints = (
                 results[0].keypoints is not None
                 and len(results[0].keypoints.xy) > 0
@@ -128,22 +119,22 @@ def analyze_video_file(video_path, headless=True):
                 media_ombros_y = (ombro_esq_y + ombro_dir_y) / 2
                 media_quadril_y = (quadril_esq_y + quadril_dir_y) / 2
 
-                # --- Critério 1: Aspect Ratio (bounding box mais larga que alta = deitado) ---
+
                 box = pessoas_detectadas[0].xywh[0]
                 w, h = box[2].item(), box[3].item()
                 aspect_ratio = w / h if h > 0 else 0
                 eh_deitado = aspect_ratio > 1.0
 
-                # --- Critério 2: Ombros e quadris na mesma altura (corpo horizontal) ---
+
                 diff_ombro_quadril = abs(media_ombros_y - media_quadril_y)
                 corpo_horizontal = diff_ombro_quadril < (frame_height * 0.08)
 
-                # --- Critério 3: Velocidade de descida (queda brusca) ---
+
                 historico_nariz_y.append(nariz_y)
                 velocidade = nariz_y - prev_y_nariz if prev_y_nariz > 0 else 0
                 queda_rapida = velocidade > 25
 
-                # --- Critério 4: Nariz abaixo de 60% da tela (está baixo) ---
+
                 esta_baixo = nariz_y > (frame_height * 0.6)
 
                 indicadores_queda = (
@@ -154,9 +145,7 @@ def analyze_video_file(video_path, headless=True):
 
                 prev_y_nariz = nariz_y
 
-            # ==========================================================
-            # 3. MÁQUINA DE ESTADOS
-            # ==========================================================
+
             if estado_atual == ESTADO_NORMAL:
                 if indicadores_queda:
                     frames_suspeita += 1
@@ -188,12 +177,9 @@ def analyze_video_file(video_path, headless=True):
                         estado_atual = ESTADO_NORMAL
                         frames_recuperacao = 0
                 else:
-                    # Ainda no chão, reseta recuperação
                     frames_recuperacao = 0
 
-            # ==========================================================
-            # 4. EXIBIÇÃO
-            # ==========================================================
+
             if not headless:
                 if estado_atual == ESTADO_CAIU:
                     cv2.putText(frame, "ALERTA: QUEDA DETECTADA!", (50, 50),
@@ -213,8 +199,3 @@ def analyze_video_file(video_path, headless=True):
     cv2.destroyAllWindows()
     
     return fall_detected_in_video
-
-
-if __name__ == '__main__':
-    # Teste local
-    analyze_video_file("Video_Gerado_Pronto_Para_Teste.mp4", headless=False)
